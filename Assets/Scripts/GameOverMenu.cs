@@ -11,6 +11,9 @@ public class GameOverMenu : MonoBehaviour
     [Tooltip("Panel del Menú Principal (MainMenu)")]
     [SerializeField] private GameObject mainMenuPanel;
 
+    [Tooltip("Panel de Selección de Nivel (LevelSelection)")]
+    [SerializeField] private GameObject levelSelectionPanel;
+
     [Tooltip("Panel del Quiz (Quiz Panel)")]
     [SerializeField] private GameObject quizPanel;
 
@@ -55,6 +58,12 @@ public class GameOverMenu : MonoBehaviour
         {
             mainMenuPanel = GameObject.Find("MainMenu");
             if (mainMenuPanel == null) mainMenuPanel = GameObject.Find("Main Menu");
+        }
+
+        if (levelSelectionPanel == null)
+        {
+            levelSelectionPanel = GameObject.Find("LevelSelection");
+            if (levelSelectionPanel == null) levelSelectionPanel = GameObject.Find("Level Selection");
         }
 
         if (quizPanel == null)
@@ -139,6 +148,16 @@ public class GameOverMenu : MonoBehaviour
         if (gameOverPanel != null)
         {
             gameOverPanel.SetActive(false);
+        }
+
+        if (quizPanel != null)
+        {
+            quizPanel.SetActive(false);
+        }
+
+        if (levelSelectionPanel != null)
+        {
+            levelSelectionPanel.SetActive(false);
         }
 
         if (mainMenuPanel != null)
