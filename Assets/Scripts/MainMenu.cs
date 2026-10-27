@@ -7,6 +7,9 @@ public class MainMenu : MonoBehaviour
     [Tooltip("Panel del menú principal (MainMenu)")]
     [SerializeField] private GameObject mainMenuPanel;
 
+    [Tooltip("Panel de selección de nivel (LevelSelection)")]
+    [SerializeField] private GameObject levelSelectionPanel;
+
     [Tooltip("Panel del juego (Quiz Panel)")]
     [SerializeField] private GameObject quizPanel;
 
@@ -42,6 +45,12 @@ public class MainMenu : MonoBehaviour
             mainMenuPanel = this.gameObject;
         }
 
+        if (levelSelectionPanel == null)
+        {
+            levelSelectionPanel = GameObject.Find("LevelSelection");
+            if (levelSelectionPanel == null) levelSelectionPanel = GameObject.Find("Level Selection");
+        }
+
         if (quizPanel == null)
         {
             quizPanel = GameObject.Find("Quiz Panel");
@@ -71,35 +80,45 @@ public class MainMenu : MonoBehaviour
     }
 
     /// <summary>
-    /// Desactiva el panel MainMenu, activa el Quiz Panel e inicia las preguntas.
+    /// Al pulsar Play, si existe LevelSelection abre la selección de nivel; si no, va directo al Quiz.
     /// </summary>
     public void PlayQuiz()
     {
-        // 1. Activar el Quiz Panel
-        if (quizPanel != null)
+        // 1. Si existe panel LevelSelection, abrirlo
+        if (levelSelectionPanel != null)
         {
-            quizPanel.SetActive(true);
-        }
-
-        // 2. Desactivar el MainMenu
-        if (mainMenuPanel != null)
-        {
-            mainMenuPanel.SetActive(false);
-        }
-
-        // 3. Iniciar el juego en QuizManager
-        if (quizManager == null)
-        {
-            quizManager = FindFirstObjectByType<QuizManager>(FindObjectsInactive.Include);
-        }
-
-        if (quizManager != null)
-        {
-            quizManager.StartGame();
+            if (mainMenuPanel != null)
+            {
+                mainMenuPanel.SetActive(false);
+            }
+            levelSelectionPanel.SetActive(true);
         }
         else
         {
-            Debug.LogWarning("[MainMenu] No se encontró el componente QuizManager en la escena.");
+            // 2. Si no hay LevelSelection, ir directo a Quiz Panel como antes
+            if (quizPanel != null)
+            {
+                quizPanel.SetActive(true);
+            }
+
+            if (mainMenuPanel != null)
+            {
+                mainMenuPanel.SetActive(false);
+            }
+
+            if (quizManager == null)
+            {
+                quizManager = FindFirstObjectByType<QuizManager>(FindObjectsInactive.Include);
+            }
+
+            if (quizManager != null)
+            {
+                quizManager.StartGame();
+            }
+            else
+            {
+                Debug.LogWarning("[MainMenu] No se encontró el componente QuizManager en la escena.");
+            }
         }
     }
 }
