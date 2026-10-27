@@ -28,6 +28,21 @@ public class QuizManagerEditor : Editor
             CreateLevelObjects(manager);
         }
 
+        if (GUILayout.Button("🔥 Añadir / Configurar Fuego Dracónico en Play BTN", GUILayout.Height(30)))
+        {
+            SetupDragonFireEffect();
+        }
+
+        if (GUILayout.Button("🔥 Configurar Fuego en Botones de Niveles (1, 2 y 3)", GUILayout.Height(30)))
+        {
+            SetupDragonFireOnLevelButtons();
+        }
+
+        if (GUILayout.Button("🔊 Configurar Sonidos de Acierto y Fallo en Quiz", GUILayout.Height(30)))
+        {
+            SetupQuizAudioFeedback();
+        }
+
         EditorGUILayout.Space(10);
 
         // Dibuja el inspector normal con todas las variables serializadas
@@ -181,6 +196,7 @@ public class QuizManagerEditor : Editor
         // 3. Configurar LevelSelection si existe
         GameObject levelSelGo = GameObject.Find("LevelSelection");
         if (levelSelGo == null) levelSelGo = GameObject.Find("Level Selection");
+        if (levelSelGo == null) levelSelGo = FindButtonInSceneOrPanels("LevelSelection");
 
         if (levelSelGo != null)
         {
@@ -230,5 +246,148 @@ public class QuizManagerEditor : Editor
     public static void ConnectAll()
     {
         SetupQuizManagerInScene();
+    }
+
+    [MenuItem("Tools/Kahoot Quiz/🔊 Configurar Sonidos de Acierto y Fallo en Quiz")]
+    public static void SetupQuizAudioFeedback()
+    {
+        QuizManager manager = FindFirstObjectByType<QuizManager>(FindObjectsInactive.Include);
+        if (manager == null)
+        {
+            Debug.LogWarning("[Kahoot Quiz] No se encontró el componente QuizManager en la escena.");
+            return;
+        }
+
+        Undo.RegisterCompleteObjectUndo(manager.gameObject, "Configurar Sonidos de Quiz");
+
+        AudioSource src = manager.GetComponent<AudioSource>();
+        if (src == null)
+        {
+            src = Undo.AddComponent<AudioSource>(manager.gameObject);
+            src.playOnAwake = false;
+        }
+
+        manager.AutoFindReferences();
+        EditorUtility.SetDirty(manager);
+        Debug.Log("<color=green>[Kahoot Quiz] ¡Sonidos de acierto (checkpoint) y fallo (error) configurados con éxito en QuizManager!</color>");
+    }
+
+    [MenuItem("Tools/Kahoot Quiz/🔥 Añadir Fuego Dracónico a Play BTN")]
+    public static void SetupDragonFireEffect()
+    {
+        GameObject playBtn = FindButtonInSceneOrPanels("Play BTN");
+        if (playBtn == null) playBtn = FindButtonInSceneOrPanels("PlayBTN");
+        if (playBtn == null) playBtn = FindButtonInSceneOrPanels("Play Button");
+
+        if (playBtn == null)
+        {
+            Debug.LogWarning("[Kahoot Quiz] No se encontró el objeto 'Play BTN' en la escena.");
+            return;
+        }
+
+        Undo.RegisterCompleteObjectUndo(playBtn, "Añadir Fuego Dracónico Play BTN");
+        DragonFireHoverEffect effect = playBtn.GetComponent<DragonFireHoverEffect>();
+        if (effect == null)
+        {
+            effect = Undo.AddComponent<DragonFireHoverEffect>(playBtn);
+        }
+
+        // Asignar el sonido de fuego suave si existe en el proyecto
+        SerializedObject so = new SerializedObject(effect);
+        SerializedProperty soundProp = so.FindProperty("hoverSound");
+        if (soundProp != null && soundProp.objectReferenceValue == null)
+        {
+            AudioClip clip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Art/Audio/dragon_fire_hover.wav");
+            if (clip != null)
+            {
+                soundProp.objectReferenceValue = clip;
+                so.ApplyModifiedProperties();
+            }
+        }
+
+        EditorUtility.SetDirty(playBtn);
+        Selection.activeGameObject = playBtn;
+        Debug.Log("<color=orange>[Kahoot Quiz] ¡Efecto de Fuego Dracónico (Rojo & Dorado) configurado con éxito en Play BTN!</color>");
+    }
+
+    [MenuItem("Tools/Kahoot Quiz/🔥 Configurar Fuego en Botones de Niveles (1, 2 y 3)")]
+    public static void SetupDragonFireOnLevelButtons()
+    {
+        ConfigureLevelButton("Level1 BTN", "Assets/Art/Audio/fire_level1_soft.wav", 12, 6.5f);
+        ConfigureLevelButton("Level2 BTN", "Assets/Art/Audio/fire_level2_medium.wav", 16, 8.0f);
+        ConfigureLevelButton("Level3 BTN", "Assets/Art/Audio/fire_level3_heavy.wav", 22, 9.5f);
+
+        Debug.Log("<color=orange>[Kahoot Quiz] ¡Efecto de Fuego Dracónico configurado en los 3 botones de niveles con sus 3 sonidos únicos!</color>");
+    }
+
+    [MenuItem("Tools/Kahoot Quiz/🔥 Configurar Fuego en TODOS los Botones (Play + Niveles 1, 2 y 3)")]
+    public static void SetupDragonFireOnAllButtons()
+    {
+        SetupDragonFireEffect();
+        SetupDragonFireOnLevelButtons();
+    }
+
+    private static void ConfigureLevelButton(string buttonName, string audioPath, int maxEmbers, float flickerSpeed)
+    {
+        GameObject btnGo = FindButtonInSceneOrPanels(buttonName);
+        if (btnGo == null)
+        {
+            Debug.LogWarning($"[Kahoot Quiz] No se encontró '{buttonName}' en la escena.");
+            return;
+        }
+
+        Undo.RegisterCompleteObjectUndo(btnGo, "Configurar Fuego Dracónico " + buttonName);
+
+        DragonFireHoverEffect effect = btnGo.GetComponent<DragonFireHoverEffect>();
+        if (effect == null)
+        {
+            effect = Undo.AddComponent<DragonFireHoverEffect>(btnGo);
+        }
+
+        SerializedObject so = new SerializedObject(effect);
+
+        SerializedProperty soundProp = so.FindProperty("hoverSound");
+        if (soundProp != null)
+        {
+            AudioClip clip = AssetDatabase.LoadAssetAtPath<AudioClip>(audioPath);
+            if (clip != null)
+            {
+                soundProp.objectReferenceValue = clip;
+            }
+        }
+
+        SerializedProperty embersProp = so.FindProperty("maxEmbers");
+        if (embersProp != null)
+        {
+            embersProp.intValue = maxEmbers;
+        }
+
+        SerializedProperty flickerProp = so.FindProperty("flickerSpeed");
+        if (flickerProp != null)
+        {
+            flickerProp.floatValue = flickerSpeed;
+        }
+
+        so.ApplyModifiedProperties();
+        EditorUtility.SetDirty(btnGo);
+        Debug.Log($"<color=yellow>[Kahoot Quiz] {buttonName} configurado con sonido: {audioPath}</color>");
+    }
+
+    private static GameObject FindButtonInSceneOrPanels(string buttonName)
+    {
+        GameObject go = GameObject.Find(buttonName);
+        if (go != null) return go;
+
+        Transform[] allTransforms = Resources.FindObjectsOfTypeAll<Transform>();
+        foreach (var t in allTransforms)
+        {
+            if (t.hideFlags != HideFlags.None) continue;
+            if (EditorUtility.IsPersistent(t.gameObject)) continue;
+            if (t.name.Equals(buttonName, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return t.gameObject;
+            }
+        }
+        return null;
     }
 }

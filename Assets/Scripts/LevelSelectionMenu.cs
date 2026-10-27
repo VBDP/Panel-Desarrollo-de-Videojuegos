@@ -33,31 +33,45 @@ public class LevelSelectionMenu : MonoBehaviour
     private void Awake()
     {
         AutoFindReferences();
+        SetupButtons();
+    }
 
+    private void Start()
+    {
+        AutoFindReferences();
+        SetupButtons();
+    }
+
+    private void SetupButtons()
+    {
         if (level1Button != null)
         {
-            level1Button.onClick.RemoveAllListeners();
-            level1Button.onClick.AddListener(() => SelectLevel(1));
+            level1Button.onClick.RemoveListener(SelectLevel1);
+            level1Button.onClick.AddListener(SelectLevel1);
         }
 
         if (level2Button != null)
         {
-            level2Button.onClick.RemoveAllListeners();
-            level2Button.onClick.AddListener(() => SelectLevel(2));
+            level2Button.onClick.RemoveListener(SelectLevel2);
+            level2Button.onClick.AddListener(SelectLevel2);
         }
 
         if (level3Button != null)
         {
-            level3Button.onClick.RemoveAllListeners();
-            level3Button.onClick.AddListener(() => SelectLevel(3));
+            level3Button.onClick.RemoveListener(SelectLevel3);
+            level3Button.onClick.AddListener(SelectLevel3);
         }
 
         if (backButton != null)
         {
-            backButton.onClick.RemoveAllListeners();
+            backButton.onClick.RemoveListener(BackToMainMenu);
             backButton.onClick.AddListener(BackToMainMenu);
         }
     }
+
+    private void SelectLevel1() => SelectLevel(1);
+    private void SelectLevel2() => SelectLevel(2);
+    private void SelectLevel3() => SelectLevel(3);
 
     private void Reset()
     {
@@ -74,8 +88,16 @@ public class LevelSelectionMenu : MonoBehaviour
 
         if (mainMenuPanel == null)
         {
-            mainMenuPanel = GameObject.Find("MainMenu");
-            if (mainMenuPanel == null) mainMenuPanel = GameObject.Find("Main Menu");
+            MainMenu mm = FindFirstObjectByType<MainMenu>(FindObjectsInactive.Include);
+            if (mm != null)
+            {
+                mainMenuPanel = mm.gameObject;
+            }
+            else
+            {
+                mainMenuPanel = GameObject.Find("MainMenu");
+                if (mainMenuPanel == null) mainMenuPanel = GameObject.Find("Main Menu");
+            }
         }
 
         if (quizPanel == null)
@@ -89,7 +111,7 @@ public class LevelSelectionMenu : MonoBehaviour
             quizManager = FindFirstObjectByType<QuizManager>(FindObjectsInactive.Include);
         }
 
-        // Buscar botones Level1 BTN, Level2 BTN, Level3 BTN
+        // Buscar botones Level1 BTN, Level2 BTN, Level3 BTN y Return/Back BTN
         Button[] buttons = GetComponentsInChildren<Button>(true);
         foreach (var b in buttons)
         {
@@ -106,7 +128,7 @@ public class LevelSelectionMenu : MonoBehaviour
             {
                 if (level3Button == null) level3Button = b;
             }
-            else if (n.Contains("back") || n.Contains("volver") || n.Contains("return"))
+            else if (n.Contains("back") || n.Contains("volver") || n.Contains("return") || n.Contains("brn"))
             {
                 if (backButton == null) backButton = b;
             }
@@ -148,7 +170,7 @@ public class LevelSelectionMenu : MonoBehaviour
     }
 
     /// <summary>
-    /// Vuelve al menú principal.
+    /// Vuelve al menú principal desactivando la selección de niveles y mostrando el MainMenu.
     /// </summary>
     public void BackToMainMenu()
     {
@@ -156,10 +178,32 @@ public class LevelSelectionMenu : MonoBehaviour
         {
             levelSelectionPanel.SetActive(false);
         }
+        else
+        {
+            gameObject.SetActive(false);
+        }
+
+        if (mainMenuPanel == null)
+        {
+            MainMenu mm = FindFirstObjectByType<MainMenu>(FindObjectsInactive.Include);
+            if (mm != null) mainMenuPanel = mm.gameObject;
+        }
 
         if (mainMenuPanel != null)
         {
             mainMenuPanel.SetActive(true);
         }
+
+        if (quizManager == null)
+        {
+            quizManager = FindFirstObjectByType<QuizManager>(FindObjectsInactive.Include);
+        }
+
+        if (quizManager != null)
+        {
+            quizManager.ReturnToMainMenu();
+        }
+
+        Debug.Log("<color=yellow>[LevelSelectionMenu] Panel LevelSelection desactivado y MainMenu activado.</color>");
     }
 }

@@ -99,6 +99,16 @@ public class QuizManager : MonoBehaviour
     [Tooltip("Componente QuizLevel asignado al Nivel 3 (Alto)")]
     [SerializeField] private QuizLevel level3;
 
+    [Header("Efectos de Sonido (Audio Feedback)")]
+    [Tooltip("Sonido de acierto o checkpoint al responder correctamente")]
+    [SerializeField] private AudioClip correctAnswerSound;
+
+    [Tooltip("Sonido de error o fallo al responder incorrectamente")]
+    [SerializeField] private AudioClip wrongAnswerSound;
+
+    [Tooltip("AudioSource para reproducir los sonidos de acierto y fallo")]
+    [SerializeField] private AudioSource audioSource;
+
     [Header("Colores de Iluminación (Feedback)")]
     [Tooltip("Color que iluminará el botón cuando la respuesta es CORRECTA")]
     [SerializeField] private Color correctColor = new Color(0.18f, 0.80f, 0.44f, 1f); // Verde
@@ -166,6 +176,16 @@ public class QuizManager : MonoBehaviour
         {
             returnToLevelSelectionButton.onClick.RemoveListener(ReturnToLevelSelection);
             returnToLevelSelectionButton.onClick.AddListener(ReturnToLevelSelection);
+        }
+
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+            if (audioSource == null)
+            {
+                audioSource = gameObject.AddComponent<AudioSource>();
+                audioSource.playOnAwake = false;
+            }
         }
     }
 
@@ -479,6 +499,23 @@ public class QuizManager : MonoBehaviour
             else if (lName.Contains("2") && level2 == null) level2 = lvl;
             else if (lName.Contains("3") && level3 == null) level3 = lvl;
         }
+
+        // 7. Configurar AudioSource y sonidos por defecto
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+        }
+
+#if UNITY_EDITOR
+        if (correctAnswerSound == null)
+        {
+            correctAnswerSound = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Art/Audio/quiz_correct_checkpoint.wav");
+        }
+        if (wrongAnswerSound == null)
+        {
+            wrongAnswerSound = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Art/Audio/quiz_wrong_error.wav");
+        }
+#endif
     }
 
     private void InitializeDefaultQuestions()
@@ -773,11 +810,13 @@ public class QuizManager : MonoBehaviour
             UpdateScoreText();
 
             IlluminateButton(selectedIndex, correctColor);
+            PlaySound(correctAnswerSound);
             Debug.Log($"<color=green>[QuizManager] ¡Respuesta CORRECTA! Opción {selectedIndex + 1}. Total aciertos: {correctAnswersCount}</color>");
         }
         else
         {
             IlluminateButton(selectedIndex, wrongColor);
+            PlaySound(wrongAnswerSound);
             Debug.Log($"<color=red>[QuizManager] Respuesta INCORRECTA. Opción pulsada: {selectedIndex + 1}. La correcta era: {currentQ.correctAnswerIndex + 1}</color>");
 
             if (showCorrectAnswerOnMistake && currentQ.correctAnswerIndex >= 0 && currentQ.correctAnswerIndex < answerButtons.Length)
@@ -811,6 +850,23 @@ public class QuizManager : MonoBehaviour
             if (nextQuestionCoroutine != null) StopCoroutine(nextQuestionCoroutine);
             nextQuestionCoroutine = StartCoroutine(NextQuestionRoutine());
         }
+    }
+
+    private void PlaySound(AudioClip clip)
+    {
+        if (clip == null) return;
+
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+            if (audioSource == null)
+            {
+                audioSource = gameObject.AddComponent<AudioSource>();
+                audioSource.playOnAwake = false;
+            }
+        }
+
+        audioSource.PlayOneShot(clip);
     }
 
     private void IlluminateButton(int buttonIndex, Color feedbackColor)
